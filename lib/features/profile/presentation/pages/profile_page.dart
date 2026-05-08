@@ -9,6 +9,7 @@ import 'personal_info_page.dart';
 import 'security_page.dart';
 import 'notifications_settings_page.dart';
 import 'settings_page.dart';
+import 'help_center_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -141,11 +142,14 @@ class ProfilePage extends ConsumerWidget {
                 MaterialPageRoute(builder: (context) => const SettingsPage()),
               ),
             ),
-            _buildProfileOption(Icons.help_outline, 'Help Center', () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Help Center is coming soon!')),
-              );
-            }),
+            _buildProfileOption(
+              Icons.help_outline,
+              'Help Center',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpCenterPage()),
+              ),
+            ),
             _buildProfileOption(
               Icons.logout,
               'Logout',
