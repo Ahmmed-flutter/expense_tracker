@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ecommerce_mart/core/theme/app_colors.dart';
 import 'package:ecommerce_mart/features/auth/presentation/providers/auth_provider.dart';
 import 'package:ecommerce_mart/features/auth/presentation/pages/login_page.dart';
@@ -10,6 +12,34 @@ import 'settings_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
+  Future<void> _pickImage(WidgetRef ref, BuildContext context) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 75,
+    );
+
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final authState = ref.read(authProvider);
+      
+      await ref.read(authProvider.notifier).updateProfile(
+        authState.name ?? '',
+        authState.email ?? '',
+        base64Image,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated!')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,20 +62,23 @@ class ProfilePage extends ConsumerWidget {
                     radius: 50,
                     backgroundColor: AppColors.primary.withOpacity(0.1),
                     child: ClipOval(
-                      child: Image.network(
-                        'https://api.dicebear.com/7.x/avataaars/png?seed=${authState.name ?? 'User'}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Text(
-                            (authState.name ?? 'U').substring(0, 1).toUpperCase(),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const CircularProgressIndicator();
-                        },
-                      ),
+                      child: authState.imagePath != null
+                          ? Image.memory(
+                              base64Decode(authState.imagePath!),
+                              fit: BoxFit.cover,
+                              width: 100,
+                              height: 100,
+                            )
+                          : Image.network(
+                              'https://api.dicebear.com/7.x/avataaars/png?seed=${authState.name ?? 'User'}',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Text(
+                                  (authState.name ?? 'U').substring(0, 1).toUpperCase(),
+                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                );
+                              },
+                            ),
                     ),
                   ),
                 ),
@@ -53,11 +86,7 @@ class ProfilePage extends ConsumerWidget {
                   bottom: 0,
                   right: 0,
                   child: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Image upload feature coming soon!')),
-                      );
-                    },
+                    onTap: () => _pickImage(ref, context),
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(

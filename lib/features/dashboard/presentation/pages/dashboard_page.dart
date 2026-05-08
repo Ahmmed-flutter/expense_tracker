@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ecommerce_mart/features/transactions/presentation/providers/transaction_provider.dart';
@@ -25,7 +26,7 @@ class DashboardPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              _buildHeader(context, authState.name ?? 'User'),
+              _buildHeader(context, authState),
               const SizedBox(height: 24),
               BalanceCard(
                 totalBalance: notifier.totalBalance,
@@ -53,7 +54,8 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String name) {
+  Widget _buildHeader(BuildContext context, AuthState authState) {
+    final name = authState.name ?? 'User';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -63,10 +65,17 @@ class DashboardPage extends ConsumerWidget {
               radius: 20,
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: ClipOval(
-                child: Image.network(
-                  'https://api.dicebear.com/7.x/avataaars/png?seed=$name',
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
-                ),
+                child: authState.imagePath != null
+                    ? Image.memory(
+                        base64Decode(authState.imagePath!),
+                        fit: BoxFit.cover,
+                        width: 40,
+                        height: 40,
+                      )
+                    : Image.network(
+                        'https://api.dicebear.com/7.x/avataaars/png?seed=$name',
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: AppColors.primary),
+                      ),
               ),
             ),
             const SizedBox(width: 12),
