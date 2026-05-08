@@ -9,16 +9,32 @@ class AuthState {
   final String? name;
   final String? imagePath;
   final bool isLoading;
+  final String? error;
 
-  AuthState({this.isLoggedIn = false, this.email, this.name, this.imagePath, this.isLoading = true});
+  AuthState({
+    this.isLoggedIn = false, 
+    this.email, 
+    this.name, 
+    this.imagePath, 
+    this.isLoading = true,
+    this.error,
+  });
 
-  AuthState copyWith({bool? isLoggedIn, String? email, String? name, String? imagePath, bool? isLoading}) {
+  AuthState copyWith({
+    bool? isLoggedIn, 
+    String? email, 
+    String? name, 
+    String? imagePath, 
+    bool? isLoading,
+    String? error,
+  }) {
     return AuthState(
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
       email: email ?? this.email,
       name: name ?? this.name,
       imagePath: imagePath ?? this.imagePath,
       isLoading: isLoading ?? this.isLoading,
+      error: error, // Note: error is usually reset to null unless provided
     );
   }
 }
@@ -44,19 +60,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> login(String email, String password) async {
-    state = state.copyWith(isLoading: true);
+  Future<bool> login(String email, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
     await Future.delayed(const Duration(seconds: 1));
-    final name = email.split('@')[0].toUpperCase();
-    await _repository.login(email, name);
-    state = AuthState(isLoggedIn: true, email: email, name: name, isLoading: false);
+    
+    final user = await _repository.verifyUser(email, password);
+    if (user != null) {
+      await _repository.login(email, user['name']);
+      state = AuthState(
+        isLoggedIn: true, 
+        email: email, 
+        name: user['name'], 
+        isLoading: false
+      );
+      return true;
+    } else {
+      state = state.copyWith(
+        isLoading: false, 
+        error: 'Invalid email or password'
+      );
+      return false;
+    }
   }
 
-  Future<void> register(String name, String email, String password) async {
-    state = state.copyWith(isLoading: true);
+  Future<bool> register(String name, String email, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
     await Future.delayed(const Duration(seconds: 1));
-    await _repository.login(email, name);
-    state = AuthState(isLoggedIn: true, email: email, name: name, isLoading: false);
+    try {
+      await _repository.registerUser(name, email, password);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
   }
 
   Future<void> logout() async {
@@ -66,6 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateProfile(String name, String email, [String? imagePath]) async {
     state = state.copyWith(isLoading: true);
+    await Future.delayed(const Duration(milliseconds: 500));
     await _repository.updateProfile(name, email, imagePath);
     state = state.copyWith(name: name, email: email, imagePath: imagePath, isLoading: false);
   }

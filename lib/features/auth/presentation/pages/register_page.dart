@@ -86,6 +86,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 icon: Icons.lock_reset_outlined,
                 isPassword: true,
               ),
+              if (authState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    authState.error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                  ),
+                ),
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
@@ -109,13 +117,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             return;
                           }
 
-                          await ref.read(authProvider.notifier).register(
+                          final success = await ref.read(authProvider.notifier).register(
                                 _nameController.text,
                                 _emailController.text,
                                 _passwordController.text,
                               );
                           
-                          if (mounted) {
+                          if (success && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Account created successfully!')),
                             );

@@ -8,6 +8,7 @@ import 'package:ecommerce_mart/core/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:ecommerce_mart/features/auth/presentation/providers/auth_provider.dart';
 import 'package:ecommerce_mart/features/profile/presentation/pages/notifications_settings_page.dart';
+import 'package:ecommerce_mart/features/auth/presentation/pages/login_page.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -26,7 +27,7 @@ class DashboardPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              _buildHeader(context, authState),
+              _buildHeader(context, ref, authState),
               const SizedBox(height: 24),
               BalanceCard(
                 totalBalance: notifier.totalBalance,
@@ -54,7 +55,7 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, AuthState authState) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, AuthState authState) {
     final name = authState.name ?? 'User';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -98,28 +99,78 @@ class DashboardPage extends ConsumerWidget {
             ),
           ],
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
+        Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsSettingsPage()),
-              );
-            },
-          ),
+              child: IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationsSettingsPage()),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.logout, color: Colors.redAccent),
+                onPressed: () => _showLogoutDialog(context, ref),
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 

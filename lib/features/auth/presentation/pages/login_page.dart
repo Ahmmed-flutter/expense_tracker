@@ -63,6 +63,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 icon: Icons.lock_outline,
                 isPassword: true,
               ),
+              if (authState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    authState.error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                  ),
+                ),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
@@ -81,11 +89,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : () async {
                           if (_emailController.text.isNotEmpty &&
                               _passwordController.text.isNotEmpty) {
-                            await ref.read(authProvider.notifier).login(
+                            final success = await ref.read(authProvider.notifier).login(
                                   _emailController.text,
                                   _passwordController.text,
                                 );
-                            if (mounted) {
+                            if (success && mounted) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(builder: (context) => const MainScreen()),
